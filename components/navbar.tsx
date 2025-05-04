@@ -8,7 +8,7 @@ import { useSession, signOut } from "next-auth/react"
 import { useState } from "react"
 
 export default function Navbar() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
@@ -18,8 +18,12 @@ export default function Navbar() {
     return pathname === path
   }
 
+  const handleSignOut = async () => {
+    await signOut({ redirect: true, callbackUrl: "/" })
+  }
+
   const getDashboardLink = () => {
-    if (!session) return null
+    if (!session?.user) return null
 
     switch (session.user.role) {
       case "admin":
@@ -32,11 +36,18 @@ export default function Navbar() {
         )
       case "farmer":
         return (
-          <Link href="/farmer/dashboard">
-            <Button variant="ghost" className={isActive("/farmer/dashboard") ? "bg-accent" : ""}>
-              Dashboard
-            </Button>
-          </Link>
+          <>
+            <Link href="/farmer/dashboard">
+              <Button variant="ghost" className={isActive("/farmer/dashboard") ? "bg-primary-foreground/10" : ""}>
+                Dashboard
+              </Button>
+            </Link>
+            <Link href="/farmer/orders">
+              <Button variant="ghost" className={isActive("/farmer/orders") ? "bg-primary-foreground/10" : ""}>
+                Orders
+              </Button>
+            </Link>
+          </>
         )
       case "user":
         return (
@@ -82,7 +93,7 @@ export default function Navbar() {
 
         {/* Desktop Right Side */}
         <div className="hidden md:flex items-center gap-2">
-          {session ? (
+          {session?.user ? (
             <>
               {session.user.role === "user" && (
                 <Link href="/cart">
@@ -95,7 +106,7 @@ export default function Navbar() {
                 <span className="text-sm font-medium">
                   {session.user.name} ({session.user.role})
                 </span>
-                <Button variant="ghost" size="icon" onClick={() => signOut()}>
+                <Button variant="ghost" size="icon" onClick={handleSignOut}>
                   <LogOut className="h-5 w-5" />
                 </Button>
               </div>
@@ -127,36 +138,60 @@ export default function Navbar() {
                 Products
               </Button>
             </Link>
-            {session && session.user.role === "user" && (
+            {session?.user && session.user.role === "user" && (
               <Link href="/cart" onClick={toggleMenu}>
                 <Button variant="ghost" className="w-full justify-start">
                   Cart
                 </Button>
               </Link>
             )}
-            {session && session.user.role === "admin" && (
-              <Link href="/admin/dashboard" onClick={toggleMenu}>
-                <Button variant="ghost" className="w-full justify-start">
-                  Admin Dashboard
-                </Button>
-              </Link>
+            {session?.user && session.user.role === "admin" && (
+              <>
+                <Link href="/admin/dashboard" onClick={toggleMenu}>
+                  <Button variant="ghost" className="w-full justify-start">
+                    Admin Dashboard
+                  </Button>
+                </Link>
+                <Link href="/admin/products" onClick={toggleMenu}>
+                  <Button variant="ghost" className="w-full justify-start">
+                    All Products
+                  </Button>
+                </Link>
+                <Link href="/admin/orders" onClick={toggleMenu}>
+                  <Button variant="ghost" className="w-full justify-start">
+                    All Orders
+                  </Button>
+                </Link>
+                <Link href="/admin/users" onClick={toggleMenu}>
+                  <Button variant="ghost" className="w-full justify-start">
+                    Manage Users
+                  </Button>
+                </Link>
+              </>
             )}
-            {session && session.user.role === "farmer" && (
-              <Link href="/farmer/dashboard" onClick={toggleMenu}>
-                <Button variant="ghost" className="w-full justify-start">
-                  Farmer Dashboard
-                </Button>
-              </Link>
+            {session?.user && session.user.role === "farmer" && (
+              <>
+                <Link href="/farmer/dashboard" onClick={toggleMenu}>
+                  <Button variant="ghost" className="w-full justify-start">
+                    Farmer Dashboard
+                  </Button>
+                </Link>
+                <Link href="/farmer/orders" onClick={toggleMenu}>
+                  <Button variant="ghost" className="w-full justify-start">
+                    Orders
+                  </Button>
+                </Link>
+              </>
             )}
-            {session && session.user.role === "user" && (
+            {session?.user && session.user.role === "user" && (
               <Link href="/orders" onClick={toggleMenu}>
                 <Button variant="ghost" className="w-full justify-start">
                   My Orders
                 </Button>
               </Link>
             )}
-            {session ? (
-              <Button variant="ghost" className="w-full justify-start" onClick={() => signOut()}>
+            {session?.user ? (
+              <Button variant="ghost" className="w-full justify-start" onClick={handleSignOut}>
                 Logout
               </Button>
             ) : (

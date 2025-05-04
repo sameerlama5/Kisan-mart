@@ -8,8 +8,21 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import Link from "next/link"
 import { AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -23,7 +36,7 @@ export default function NewProductPage() {
   const [price, setPrice] = useState("")
   const [stock, setStock] = useState("")
   const [category, setCategory] = useState("")
-  const [image, setImage] = useState("/placeholder.svg?height=400&width=400")
+  const [image, setImage] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
@@ -38,7 +51,7 @@ export default function NewProductPage() {
     formData.append("price", price)
     formData.append("stock", stock)
     formData.append("category", category)
-    formData.append("image", image)
+    formData.append("image", image) // Image URL
 
     try {
       const result = await addProduct(formData)
@@ -77,10 +90,12 @@ export default function NewProductPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
+
             <div className="space-y-2">
               <Label htmlFor="name">Product Name</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
@@ -90,6 +105,7 @@ export default function NewProductPage() {
                 required
               />
             </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="price">Price ($)</Label>
@@ -115,6 +131,7 @@ export default function NewProductPage() {
                 />
               </div>
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
               <Select value={category} onValueChange={setCategory} required>
@@ -130,6 +147,25 @@ export default function NewProductPage() {
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="image">Product Image URL</Label>
+              <Input
+                id="image"
+                type="url"
+                placeholder="https://example.com/image.jpg"
+                value={image}
+                onChange={(e) => setImage(e.target.value)}
+                required
+              />
+              {image && (
+                <img
+                  src={image}
+                  alt="Product Preview"
+                  className="mt-2 rounded-md max-h-64 object-contain border"
+                />
+              )}
             </div>
           </form>
         </CardContent>

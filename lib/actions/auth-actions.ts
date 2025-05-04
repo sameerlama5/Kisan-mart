@@ -1,6 +1,6 @@
 "use server"
 
-const { hash } = require("bcrypt");
+const { hash } = require("bcryptjs");
 import clientPromise from "../mongodb"
 import type { User } from "../db-models"
 

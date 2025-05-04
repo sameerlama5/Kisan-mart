@@ -37,7 +37,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
             <p className="text-muted-foreground">By {product.farmerName}</p>
           </div>
 
-          <div className="text-2xl font-bold">${product.price.toFixed(2)}</div>
+          <div className="text-2xl font-bold">Rs.{product.price.toFixed(2)}</div>
 
           <div>
             <h2 className="text-lg font-semibold mb-2">Description</h2>

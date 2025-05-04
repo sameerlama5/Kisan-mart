@@ -28,6 +28,7 @@ export default function CartItemActions({ productId, quantity }: { productId: st
   return (
     <div className="flex items-center gap-2 mt-1">
       <Button
+      className="text-accent"
         variant="outline"
         size="icon"
         onClick={() => handleUpdateQuantity(quantity - 1)}
@@ -36,11 +37,11 @@ export default function CartItemActions({ productId, quantity }: { productId: st
         -
       </Button>
       <span className="w-8 text-center">{quantity}</span>
-      <Button variant="outline" size="icon" onClick={() => handleUpdateQuantity(quantity + 1)} disabled={isLoading}>
+      <Button className="text-primary" variant="outline" size="icon" onClick={() => handleUpdateQuantity(quantity + 1)} disabled={isLoading}>
         +
       </Button>
       <Button variant="outline" size="icon" onClick={handleRemove} disabled={isLoading}>
-        <Trash className="h-4 w-4" />
+        <Trash className="h-4 w-4 text-primary" />
       </Button>
     </div>
   )

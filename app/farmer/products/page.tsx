@@ -66,7 +66,7 @@ export default async function FarmerProductsPage() {
                           {product.name}
                         </Link>
                       </td>
-                      <td className="py-3 px-4">${product.price.toFixed(2)}</td>
+                      <td className="py-3 px-4">Rs.{product.price.toFixed(2)}</td>
                       <td className="py-3 px-4">
                         <Badge className={product.stock > 0 ? "bg-accent text-accent-foreground" : "bg-destructive"}>
                           {product.stock}
@@ -78,7 +78,7 @@ export default async function FarmerProductsPage() {
                         <div className="flex items-center gap-2">
                           <Link href={`/farmer/products/${product._id}/edit`}>
                             <Button variant="outline" size="icon">
-                              <Pencil className="h-4 w-4" />
+                              <Pencil className="h-4 w-4 text-primary" />
                             </Button>
                           </Link>
                           <DeleteProductButton id={product._id} name={product.name} />

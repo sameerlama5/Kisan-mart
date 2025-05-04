@@ -45,7 +45,7 @@ export default function DeleteUserButton({ id, name }: { id: string; name: strin
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogTrigger asChild>
         <Button variant="outline" size="icon">
-          <Trash className="h-4 w-4" />
+          <Trash className="h-4 w-4 text-primary" />
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>

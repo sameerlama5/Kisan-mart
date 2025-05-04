@@ -54,7 +54,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: { suc
                   </div>
                   <div className="flex items-center gap-4">
                     <Badge className="capitalize">{order.status}</Badge>
-                    <div className="font-medium">${order.totalAmount.toFixed(2)}</div>
+                    <div className="font-medium">Rs.{order.totalAmount.toFixed(2)}</div>
                   </div>
                 </div>
               </CardHeader>
@@ -69,7 +69,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: { suc
                           </Link>
                           <div className="text-muted-foreground">Quantity: {item.quantity}</div>
                         </div>
-                        <div className="text-right font-medium">${(item.price * item.quantity).toFixed(2)}</div>
+                        <div className="text-right font-medium">Rs.{(item.price * item.quantity).toFixed(2)}</div>
                       </div>
                       {index < order.products.length - 1 && <Separator className="my-2" />}
                     </div>

@@ -1,7 +1,7 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import clientPromise from "./mongodb";
-const { compare } = require("bcrypt");
+const { compare } = require("bcryptjs");
 
 export const authOptions: NextAuthOptions = {
   providers: [

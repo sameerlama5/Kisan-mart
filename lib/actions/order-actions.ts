@@ -4,19 +4,21 @@ import { revalidatePath } from "next/cache"
 import clientPromise from "../mongodb"
 import type { Order } from "../db-models"
 import { ObjectId } from "mongodb"
-import { getServerSession } from "next-auth"
-import { authOptions } from "../auth"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth"
 import { clearCart, getCart } from "./cart-actions"
 
 export async function createOrder(formData: FormData) {
   const session = await getServerSession(authOptions)
 
-  if (!session || session.user.role !== "user") {
+  if (!session || !session.user || session.user.role !== "user") {
     return { error: "Unauthorized" }
   }
 
   const shippingAddress = formData.get("shippingAddress") as string
   const paymentMethod = formData.get("paymentMethod") as string
+  const paymentId = (formData.get("paymentId") as string) || undefined
+  const paymentStatus = (formData.get("paymentStatus") as string) || undefined
 
   if (!shippingAddress || !paymentMethod) {
     return { error: "Missing required fields" }
@@ -37,16 +39,29 @@ export async function createOrder(formData: FormData) {
     const totalAmount = cart.products.reduce((total: number, item: any) => total + item.price * item.quantity, 0)
 
     // Create order
-    const newOrder: Order = {
+    const newOrder: Order & {
+      paymentDetails?: {
+        paymentId?: string
+        paymentStatus?: string
+      }
+    } = {
       userId: session.user.id,
       userName: session.user.name,
       products: cart.products,
       totalAmount,
-      status: "pending",
+      status: paymentMethod === "paypal" && paymentStatus === "COMPLETED" ? "processing" : "pending",
       shippingAddress,
       paymentMethod,
       createdAt: new Date(),
       updatedAt: new Date(),
+    }
+
+    // Add payment details if available
+    if (paymentId || paymentStatus) {
+      newOrder.paymentDetails = {
+        paymentId,
+        paymentStatus,
+      }
     }
 
     await db.collection("orders").insertOne(newOrder)
@@ -72,7 +87,7 @@ export async function createOrder(formData: FormData) {
 export async function getUserOrders() {
   const session = await getServerSession(authOptions)
 
-  if (!session) {
+  if (!session || !session.user) {
     return []
   }
 
@@ -92,7 +107,7 @@ export async function getUserOrders() {
 export async function getFarmerOrders() {
   const session = await getServerSession(authOptions)
 
-  if (!session || session.user.role !== "farmer") {
+  if (!session || !session.user || session.user.role !== "farmer") {
     return []
   }
 
@@ -130,7 +145,7 @@ export async function getFarmerOrders() {
 export async function getAllOrders() {
   const session = await getServerSession(authOptions)
 
-  if (!session || session.user.role !== "admin") {
+  if (!session || !session.user || session.user.role !== "admin") {
     return []
   }
 
@@ -153,7 +168,7 @@ export async function updateOrderStatus(
 ) {
   const session = await getServerSession(authOptions)
 
-  if (!session || (session.user.role !== "admin" && session.user.role !== "farmer")) {
+  if (!session || !session.user || (session.user.role !== "admin" && session.user.role !== "farmer")) {
     return { error: "Unauthorized" }
   }
 

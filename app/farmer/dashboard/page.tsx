@@ -71,7 +71,7 @@ export default async function FarmerDashboardPage() {
             <TrendingUp className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalSales.toFixed(2)}</div>
+            <div className="text-2xl font-bold">Rs.{totalSales.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">Revenue from all orders</p>
           </CardContent>
         </Card>
@@ -102,7 +102,7 @@ export default async function FarmerDashboardPage() {
                         {product.name}
                       </Link>
                       <div className="text-sm text-muted-foreground">
-                        ${product.price.toFixed(2)} • {product.stock} in stock
+                        Rs.{product.price.toFixed(2)} • {product.stock} in stock
                       </div>
                     </div>
                     <Badge className={product.stock > 0 ? "bg-green-500" : "bg-red-500"}>

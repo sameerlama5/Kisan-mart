@@ -59,12 +59,14 @@ export async function addToCart(productId: string, quantity = 1) {
                 productId,
                 name: product.name,
                 price: product.price,
+                images: product.images, // 👈 add this line
                 quantity,
               },
             },
             $set: { updatedAt: new Date() },
           },
         )
+        
       }
     } else {
       // Create new cart
@@ -75,9 +77,11 @@ export async function addToCart(productId: string, quantity = 1) {
             productId,
             name: product.name,
             price: product.price,
+            images: product.images,
             quantity,
           },
         ],
+        
         createdAt: new Date(),
         updatedAt: new Date(),
       }

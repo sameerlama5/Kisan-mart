@@ -69,7 +69,7 @@ export default async function AdminDashboardPage() {
             <DollarSign className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.totalSales.toFixed(2)}</div>
+            <div className="text-2xl font-bold">Rs.{stats.totalSales.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">Revenue from all orders</p>
           </CardContent>
         </Card>
@@ -93,7 +93,7 @@ export default async function AdminDashboardPage() {
                     <div>
                       <div className="font-medium">Order #{order._id.substring(0, 8)}</div>
                       <div className="text-sm text-muted-foreground">
-                        {formatDate(order.createdAt)} • ${order.totalAmount.toFixed(2)}
+                        {formatDate(order.createdAt)} • Rs.{order.totalAmount.toFixed(2)}
                       </div>
                     </div>
                     <Badge className="capitalize">{order.status}</Badge>
@@ -101,7 +101,7 @@ export default async function AdminDashboardPage() {
                 ))}
                 <div className="text-center mt-4">
                   <Link href="/admin/orders">
-                    <Button variant="outline" size="sm">
+                    <Button className="text-primary" variant="outline" size="sm">
                       View All Orders
                     </Button>
                   </Link>
@@ -134,7 +134,7 @@ export default async function AdminDashboardPage() {
                 ))}
                 <div className="text-center mt-4">
                   <Link href="/admin/products">
-                    <Button variant="outline" size="sm">
+                    <Button className="text-primary" variant="outline" size="sm">
                       View All Products
                     </Button>
                   </Link>

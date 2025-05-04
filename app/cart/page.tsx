@@ -3,14 +3,14 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
-import Image from "next/image"
 import { redirect } from "next/navigation"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getServerSession } from "next-auth/next"
 import CartItemActions from "./cart-item-actions"
 import CheckoutForm from "./checkout-form"
+import { authOptions } from "@/lib/auth"
 
 export default async function CartPage() {
+  // Check authentication and role
   const session = await getServerSession(authOptions)
 
   if (!session) {
@@ -50,21 +50,20 @@ export default async function CartPage() {
                   <div key={item.productId}>
                     <div className="flex items-center p-4 gap-4">
                       <div className="relative h-20 w-20 rounded overflow-hidden">
-                        <Image
-                          src="/placeholder.svg?height=80&width=80"
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                        />
+                      <img
+                        src={item.images || "/placeholder.svg"}
+                       alt={item.name}
+                        className="object-cover w-full h-full"
+                     />
                       </div>
                       <div className="flex-1 min-w-0">
                         <Link href={`/products/${item.productId}`} className="font-medium hover:underline">
                           {item.name}
                         </Link>
-                        <div className="text-muted-foreground">${item.price.toFixed(2)} each</div>
+                        <div className="text-muted-foreground">Rs.{item.price.toFixed(2)} each</div>
                       </div>
                       <div className="text-right">
-                        <div className="font-medium">${(item.price * item.quantity).toFixed(2)}</div>
+                        <div className="font-medium">Rs.{(item.price * item.quantity).toFixed(2)}</div>
                         <CartItemActions productId={item.productId} quantity={item.quantity} />
                       </div>
                     </div>
@@ -72,9 +71,9 @@ export default async function CartPage() {
                   </div>
                 ))}
               </CardContent>
-              <CardFooter className="flex justify-between">
+              <CardFooter className="flex justify-between px-4 pb-6">
                 <Link href="/products">
-                  <Button variant="outline">Continue Shopping</Button>
+                  <Button className="text-primary" variant="outline">Continue Shopping</Button>
                 </Link>
               </CardFooter>
             </Card>
@@ -88,7 +87,7 @@ export default async function CartPage() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>Rs.{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
@@ -97,11 +96,11 @@ export default async function CartPage() {
                 <Separator />
                 <div className="flex justify-between font-medium text-lg">
                   <span>Total</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>Rs{subtotal.toFixed(2)}</span>
                 </div>
               </CardContent>
               <CardFooter>
-                <CheckoutForm />
+                <CheckoutForm cartTotal={subtotal} />
               </CardFooter>
             </Card>
           </div>

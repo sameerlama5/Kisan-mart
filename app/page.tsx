@@ -63,7 +63,7 @@ export default async function Home() {
               </p>
             </div>
           </div>
-          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 py-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          <div className="mx-auto grid grid-cols-1 gap-6 py-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {featuredProducts.slice(0, 8).map((product: any) => (
               <Card key={product._id} className="overflow-hidden">
                 <div className="aspect-square relative">
