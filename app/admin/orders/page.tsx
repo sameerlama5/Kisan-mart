@@ -59,7 +59,7 @@ export default async function AdminOrdersPage() {
                       </td>
                       <td className="py-3 px-4">{order.userName}</td>
                       <td className="py-3 px-4">{formatDate(order.createdAt)}</td>
-                      <td className="py-3 px-4">${order.totalAmount.toFixed(2)}</td>
+                      <td className="py-3 px-4">Rs.{order.totalAmount.toFixed(2)}</td>
                       <td className="py-3 px-4">
                         <Badge className="capitalize">{order.status}</Badge>
                       </td>

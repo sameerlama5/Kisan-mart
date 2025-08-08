@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import clientPromise from "../mongodb"
-import type { Order } from "../db-models"
+import type { Order, Transaction } from "../db-models"
 import { ObjectId } from "mongodb"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
@@ -19,6 +19,8 @@ export async function createOrder(formData: FormData) {
   const paymentMethod = formData.get("paymentMethod") as string
   const paymentId = (formData.get("paymentId") as string) || undefined
   const paymentStatus = (formData.get("paymentStatus") as string) || undefined
+  const payerEmail = (formData.get("payerEmail") as string) || undefined
+  const payerName = (formData.get("payerName") as string) || undefined
 
   if (!shippingAddress || !paymentMethod) {
     return { error: "Missing required fields" }
@@ -39,12 +41,7 @@ export async function createOrder(formData: FormData) {
     const totalAmount = cart.products.reduce((total: number, item: any) => total + item.price * item.quantity, 0)
 
     // Create order
-    const newOrder: Order & {
-      paymentDetails?: {
-        paymentId?: string
-        paymentStatus?: string
-      }
-    } = {
+    const newOrder: Order = {
       userId: session.user.id,
       userName: session.user.name,
       products: cart.products,
@@ -52,19 +49,17 @@ export async function createOrder(formData: FormData) {
       status: paymentMethod === "paypal" && paymentStatus === "COMPLETED" ? "processing" : "pending",
       shippingAddress,
       paymentMethod,
+      paymentDetails: {
+        paymentId,
+        paymentStatus,
+        payerEmail,
+        payerName,
+      },
       createdAt: new Date(),
       updatedAt: new Date(),
     }
 
-    // Add payment details if available
-    if (paymentId || paymentStatus) {
-      newOrder.paymentDetails = {
-        paymentId,
-        paymentStatus,
-      }
-    }
-
-    await db.collection("orders").insertOne(newOrder)
+    const result = await db.collection("orders").insertOne(newOrder)
 
     // Update product stock
     for (const item of cart.products) {
@@ -73,11 +68,69 @@ export async function createOrder(formData: FormData) {
         .updateOne({ _id: new ObjectId(item.productId) }, { $inc: { stock: -item.quantity } })
     }
 
+    // Create transaction records for each farmer
+    const farmerTransactions = new Map()
+
+    // Group products by farmer
+    for (const item of cart.products) {
+      const product = await db.collection("products").findOne({ _id: new ObjectId(item.productId) })
+      if (product) {
+        const farmerId = product.farmerId
+        if (!farmerTransactions.has(farmerId)) {
+          farmerTransactions.set(farmerId, {
+            farmerId,
+            farmerName: product.farmerName,
+            products: [],
+            totalAmount: 0,
+          })
+        }
+
+        const farmerTransaction = farmerTransactions.get(farmerId)
+        farmerTransaction.products.push({
+          productId: item.productId,
+          productName: item.name,
+          quantity: item.quantity,
+          unitPrice: item.price,
+          totalPrice: item.price * item.quantity,
+        })
+        farmerTransaction.totalAmount += item.price * item.quantity
+      }
+    }
+
+    // Create transaction records for each farmer
+    for (const [farmerId, transactionData] of farmerTransactions) {
+      const transaction: Transaction = {
+        orderId: result.insertedId.toString(),
+        farmerId: transactionData.farmerId,
+        farmerName: transactionData.farmerName,
+        customerId: session.user.id,
+        customerName: session.user.name,
+        customerEmail: session.user.email || payerEmail || "",
+        products: transactionData.products,
+        totalAmount: transactionData.totalAmount,
+        farmerEarnings: transactionData.totalAmount, // No platform fee for now
+        paymentMethod: paymentMethod as "paypal" | "cash" | "bank_transfer",
+        paymentDetails: {
+          paymentId: paymentId || `ORDER_${result.insertedId}`,
+          paymentStatus: (paymentStatus as "COMPLETED" | "PENDING" | "FAILED" | "CANCELLED") || "PENDING",
+          payerEmail: payerEmail || session.user.email,
+          payerName: payerName || session.user.name,
+        },
+        status: paymentMethod === "paypal" && paymentStatus === "COMPLETED" ? "completed" : "pending",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      await db.collection("transactions").insertOne(transaction)
+    }
+
     // Clear cart
     await clearCart()
 
     revalidatePath("/orders")
-    return { success: "Order placed successfully", orderId: newOrder._id }
+    revalidatePath("/farmer/transactions")
+    revalidatePath("/transactions")
+    return { success: "Order placed successfully", orderId: result.insertedId.toString() }
   } catch (error) {
     console.error("Create order error:", error)
     return { error: "Failed to place order" }
@@ -205,11 +258,66 @@ export async function updateOrderStatus(
       },
     )
 
+    // Update related transactions status
+    if (status === "delivered") {
+      await db.collection("transactions").updateMany(
+        { orderId: id },
+        {
+          $set: {
+            status: "completed",
+            updatedAt: new Date(),
+          },
+        },
+      )
+    }
+
     revalidatePath("/orders")
     revalidatePath(`/orders/${id}`)
+    revalidatePath("/farmer/transactions")
+    revalidatePath("/transactions")
     return { success: "Order status updated" }
   } catch (error) {
     console.error("Update order status error:", error)
     return { error: "Failed to update order status" }
+  }
+}
+
+export async function getOrderById(id: string) {
+  const session = await getServerSession(authOptions)
+
+  if (!session || !session.user) {
+    return null
+  }
+
+  try {
+    const client = await clientPromise
+    const db = client.db()
+
+    const order = await db.collection("orders").findOne({ _id: new ObjectId(id) })
+
+    if (!order) {
+      return null
+    }
+
+    // If user is a farmer, check if order contains their products
+    if (session.user.role === "farmer") {
+      const products = await db.collection("products").find({ farmerId: session.user.id }).toArray()
+      const productIds = products.map((p) => p._id.toString())
+
+      const hasProduct = order.products.some((p: any) => productIds.includes(p.productId))
+
+      if (!hasProduct) {
+        return null // Farmer doesn't have products in this order
+      }
+    }
+    // If user is not admin or the order owner, deny access
+    else if (session.user.role !== "admin" && order.userId !== session.user.id) {
+      return null
+    }
+
+    return JSON.parse(JSON.stringify(order))
+  } catch (error) {
+    console.error("Get order by ID error:", error)
+    return null
   }
 }

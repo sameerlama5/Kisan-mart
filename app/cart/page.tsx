@@ -60,7 +60,7 @@ export default async function CartPage() {
                         <Link href={`/products/${item.productId}`} className="font-medium hover:underline">
                           {item.name}
                         </Link>
-                        <div className="text-muted-foreground">Rs.{item.price.toFixed(2)} each</div>
+                        <div className="text-muted-foreground">Rs.{item.price.toFixed(2)} per Kg.</div>
                       </div>
                       <div className="text-right">
                         <div className="font-medium">Rs.{(item.price * item.quantity).toFixed(2)}</div>

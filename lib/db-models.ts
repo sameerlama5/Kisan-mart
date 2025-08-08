@@ -6,7 +6,19 @@ export interface User {
   role: "admin" | "farmer" | "user"
   address?: string
   phone?: string
+  profilePicture?: string
+  bio?: string
+  farmName?: string
+  farmLocation?: string
+  approvalStatus?: "pending" | "approved" | "rejected"
+  approvedAt?: Date
+  approvedBy?: string
+  rejectionReason?: string
+  warnings?: Warning[]
+  resetToken?: string
+  resetTokenExpiry?: Date
   createdAt: Date
+  updatedAt?: Date
 }
 
 export interface Product {
@@ -19,6 +31,8 @@ export interface Product {
   images: string[]
   farmerId: string
   farmerName: string
+  averageRating?: number
+  totalReviews?: number
   createdAt: Date
   updatedAt: Date
 }
@@ -52,4 +66,47 @@ export interface Cart {
   }[]
   createdAt: Date
   updatedAt: Date
+}
+
+export interface Review {
+  _id?: string
+  productId: string
+  productName: string
+  userId: string
+  userName: string
+  rating: number 
+  comment: string
+  status: "pending" | "approved" | "rejected" | "flagged"
+  moderatedBy?: string
+  moderationReason?: string
+  moderatedAt?: Date
+  isVerifiedPurchase: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface Warning {
+  _id?: string
+  farmerId: string
+  farmerName: string
+  adminId: string
+  adminName: string
+  reason: string
+  reviewId?: string 
+  severity: "low" | "medium" | "high"
+  status: "active" | "resolved" | "appealed" | "under_review"
+  farmerResponse?: FarmerResponse
+  adminReply?: string
+  adminRepliedAt?: Date
+  seenByFarmer?: Date
+  createdAt: Date
+  resolvedAt?: Date
+}
+
+export interface FarmerResponse {
+  message: string
+  actionPlan?: string
+  responseType: "explanation" | "action_plan" | "appeal" | "acknowledgment"
+  respondedAt: Date
+  attachments?: string[] 
 }

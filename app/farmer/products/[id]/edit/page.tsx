@@ -121,7 +121,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="price">Price ($)</Label>
+                <Label htmlFor="price">Price (Rs.)</Label>
                 <Input
                   id="price"
                   type="number"
@@ -164,7 +164,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         </CardContent>
         <CardFooter className="flex justify-between">
           <Link href="/farmer/products">
-            <Button variant="outline">Cancel</Button>
+            <Button className="text-primary" variant="outline">Cancel</Button>
           </Link>
           <Button type="submit" onClick={handleSubmit} disabled={isLoading}>
             {isLoading ? "Saving..." : "Save Changes"}

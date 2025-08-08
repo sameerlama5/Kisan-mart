@@ -52,7 +52,7 @@ export default async function FarmerDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalProducts}</div>
-            <p className="text-xs text-muted-foreground">Products in your inventory</p>
+            <p className="text-xs text-gray-300">Products in your inventory</p>
           </CardContent>
         </Card>
         <Card className="border-primary/20">
@@ -62,7 +62,7 @@ export default async function FarmerDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalOrders}</div>
-            <p className="text-xs text-muted-foreground">Orders received for your products</p>
+            <p className="text-xs text-gray-300">Orders received for your products</p>
           </CardContent>
         </Card>
         <Card className="border-primary/20">
@@ -72,7 +72,7 @@ export default async function FarmerDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">Rs.{totalSales.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">Revenue from all orders</p>
+            <p className="text-xs text-gray-300">Revenue from all orders</p>
           </CardContent>
         </Card>
       </div>
@@ -81,14 +81,14 @@ export default async function FarmerDashboardPage() {
         <Card className="md:col-span-1">
           <CardHeader>
             <CardTitle>Recent Products</CardTitle>
-            <CardDescription>Your recently added products</CardDescription>
+            <CardDescription className="text-gray-300">Your recently added products</CardDescription>
           </CardHeader>
           <CardContent>
             {products.length === 0 ? (
               <div className="text-center py-4">
                 <p className="text-muted-foreground">No products yet</p>
                 <Link href="/farmer/products/new" className="mt-2 inline-block">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="text-primary">
                     Add Your First Product
                   </Button>
                 </Link>
@@ -101,7 +101,7 @@ export default async function FarmerDashboardPage() {
                       <Link href={`/farmer/products/${product._id}`} className="font-medium hover:underline">
                         {product.name}
                       </Link>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-gray-300">
                         Rs.{product.price.toFixed(2)} • {product.stock} in stock
                       </div>
                     </div>
@@ -127,12 +127,12 @@ export default async function FarmerDashboardPage() {
         <Card className="md:col-span-1">
           <CardHeader>
             <CardTitle>Recent Orders</CardTitle>
-            <CardDescription>Recent orders for your products</CardDescription>
+            <CardDescription className="text-gray-300">Recent orders for your products</CardDescription>
           </CardHeader>
           <CardContent>
             {orders.length === 0 ? (
               <div className="text-center py-4">
-                <p className="text-muted-foreground">No orders yet</p>
+                <p className="text-gray-300">No orders yet</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -140,7 +140,7 @@ export default async function FarmerDashboardPage() {
                   <div key={order._id} className="flex items-center justify-between">
                     <div>
                       <div className="font-medium">Order #{order._id.substring(0, 8)}</div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-gray-300">
                         {formatDate(order.createdAt)} • {order.products.length} products
                       </div>
                     </div>
@@ -150,7 +150,7 @@ export default async function FarmerDashboardPage() {
                 {orders.length > 5 && (
                   <div className="text-center mt-4">
                     <Link href="/farmer/orders">
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="text-primary">
                         View All Orders
                       </Button>
                     </Link>

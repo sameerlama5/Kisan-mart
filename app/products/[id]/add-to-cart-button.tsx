@@ -38,6 +38,8 @@ export default function AddToCartButton({ productId }: { productId: string }) {
       }
 
       setSuccess(true)
+      // Dispatch an event to notify that the cart has been updated
+      window.dispatchEvent(new Event("cart-updated"))
       setTimeout(() => setSuccess(false), 2000)
     } catch (error) {
       alert("Failed to add product to cart")

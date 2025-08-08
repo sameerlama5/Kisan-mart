@@ -7,7 +7,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { Badge } from "@/components/ui/badge"
 import { formatDate } from "@/lib/utils"
-import { Users, ShoppingCart, Package, TrendingUp, DollarSign } from "lucide-react"
+import { Users, ShoppingCart, Package, TrendingUp, Currency } from "lucide-react"
 
 export default async function AdminDashboardPage() {
   const session = await getServerSession(authOptions)
@@ -34,11 +34,11 @@ export default async function AdminDashboardPage() {
         <Card className="border-primary/20">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-primary" />
+            <Users className="h-4 w-4 text-primary-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalUsers}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-gray-300">
               {stats.totalFarmers} farmers, {stats.totalUsers - stats.totalFarmers} customers
             </p>
           </CardContent>
@@ -46,31 +46,31 @@ export default async function AdminDashboardPage() {
         <Card className="border-primary/20">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-            <Package className="h-4 w-4 text-primary" />
+            <Package className="h-4 w-4 text-primary-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalProducts}</div>
-            <p className="text-xs text-muted-foreground">Products available on the platform</p>
+            <p className="text-xs text-gray-300">Products available on the platform</p>
           </CardContent>
         </Card>
         <Card className="border-primary/20">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-primary" />
+            <ShoppingCart className="h-4 w-4 text-primary-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalOrders}</div>
-            <p className="text-xs text-muted-foreground">Orders placed on the platform</p>
+            <p className="text-xs text-gray-300">Orders placed on the platform</p>
           </CardContent>
         </Card>
         <Card className="border-primary/20">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-            <DollarSign className="h-4 w-4 text-primary" />
+            <Currency className="h-4 w-4 text-primary-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">Rs.{stats.totalSales.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">Revenue from all orders</p>
+            <p className="text-xs text-gray-300">Revenue from all orders</p>
           </CardContent>
         </Card>
       </div>

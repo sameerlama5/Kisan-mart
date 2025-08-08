@@ -67,7 +67,7 @@ export default async function AdminProductsPage() {
                         </div>
                       </td>
                       <td className="py-3 px-4 font-medium">{product.name}</td>
-                      <td className="py-3 px-4">${product.price.toFixed(2)}</td>
+                      <td className="py-3 px-4">Rs.{product.price.toFixed(2)}</td>
                       <td className="py-3 px-4">
                         <Badge className={product.stock > 0 ? "bg-green-500" : "bg-red-500"}>{product.stock}</Badge>
                       </td>

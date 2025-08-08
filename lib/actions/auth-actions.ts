@@ -3,6 +3,7 @@
 const { hash } = require("bcryptjs");
 import clientPromise from "../mongodb"
 import type { User } from "../db-models"
+import { sendEmail, emailTemplates } from "../nodemailer"
 
 export async function registerUser(formData: FormData) {
   const name = formData.get("name") as string
@@ -40,11 +41,65 @@ export async function registerUser(formData: FormData) {
       createdAt: new Date(),
     }
 
-    await db.collection("users").insertOne(newUser)
+    // Set approval status based on role
+    if (role === "farmer") {
+      newUser.approvalStatus = "pending"
+    } else {
+      newUser.approvalStatus = "approved" // Auto-approve non-farmers
+    }
 
-    return { success: "User registered successfully" }
+    const result = await db.collection("users").insertOne(newUser)
+
+    console.log("User registered successfully:", {
+      id: result.insertedId.toString(),
+      email,
+      role,
+      approvalStatus: newUser.approvalStatus,
+    })
+
+    // Send email notification for farmers
+    if (role === "farmer") {
+      try {
+        const template = emailTemplates.farmerApprovalPending(name)
+        await sendEmail(email, template.subject, template.html)
+        console.log("Pending approval email sent to:", email)
+      } catch (emailError) {
+        console.error("Failed to send pending approval email:", emailError)
+        // Don't fail registration if email fails
+      }
+    }
+
+    return {
+      success: "User registered successfully",
+      requiresApproval: role === "farmer",
+    }
   } catch (error) {
     console.error("Registration error:", error)
     return { error: "Failed to register user" }
+  }
+}
+
+// Add a test function to check if a user exists and can be authenticated
+export async function checkUserCredentials(email: string, password: string) {
+  try {
+    const client = await clientPromise
+    const db = client.db()
+
+    const user = await db.collection("users").findOne({ email })
+
+    if (!user) {
+      return { error: "User not found" }
+    }
+
+    // Don't return the password in the response
+    const { password: _, ...userWithoutPassword } = user
+
+    return {
+      success: "User found",
+      user: userWithoutPassword,
+    }
+  } catch (error) {
+    console.error("Check user error:", error)
+    return { error: "Failed to check user" }
   }
 }

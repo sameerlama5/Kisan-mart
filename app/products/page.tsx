@@ -29,12 +29,12 @@ export default async function ProductsPage() {
                 </div>
                 <CardContent className="p-4">
                   <h3 className="font-semibold truncate">{product.name}</h3>
-                  <p className="text-sm text-muted-foreground truncate">
+                  <p className="text-sm text-gray-400 truncate">
                     {product.description}
                   </p>
                   <div className="flex items-center justify-between mt-2">
                     <p className="font-medium">Rs.{product.price.toFixed(2)}</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-gray-400">
                       By {product.farmerName}
                     </p>
                   </div>

@@ -32,7 +32,7 @@ export default async function Home() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10"
+                    className="border-primary-foreground text-primary hover:bg-primary-foreground"
                   >
                     Register
                   </Button>
@@ -44,7 +44,7 @@ export default async function Home() {
                 alt="Farm fresh produce"
                 className="rounded-xl object-cover"
                 height="400"
-                src="/placeholder.svg?height=400&width=600"
+                src="/farmer-home.png?height=400&width=600"
                 width="600"
               />
             </div>
@@ -76,8 +76,8 @@ export default async function Home() {
                 </div>
                 <CardContent className="p-4">
                   <h3 className="font-semibold truncate">{product.name}</h3>
-                  <p className="text-sm text-muted-foreground truncate">{product.description}</p>
-                  <p className="font-medium mt-2">${product.price.toFixed(2)}</p>
+                  <p className="text-sm text-gray-400 truncate">{product.description}</p>
+                  <p className="font-medium mt-2">Rs.{product.price.toFixed(2)}</p>
                 </CardContent>
                 <CardFooter className="p-4 pt-0">
                   <Link href={`/products/${product._id}`} className="w-full">
@@ -164,7 +164,7 @@ export default async function Home() {
                 alt="Farmer with produce"
                 className="rounded-xl object-cover"
                 height="400"
-                src="/placeholder.svg?height=400&width=600"
+                src="/kisan.png?height=400&width=600"
                 width="600"
               />
             </div>

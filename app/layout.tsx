@@ -11,7 +11,7 @@ import AuthProvider from "@/components/auth-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "FarmerWeb - Fresh Farm Products",
+  title: "Kisan-Mart - Fresh Farm Products",
   description: "Buy fresh farm products directly from farmers",
 }
 

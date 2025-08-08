@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Eye, EyeOff } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { registerUser } from "@/lib/actions/auth-actions"
@@ -30,6 +30,9 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -43,7 +46,7 @@ export default function RegisterPage() {
     }
 
     const formData = new FormData()
-    formData.append("name", name) 
+    formData.append("name", name)
     formData.append("email", email)
     formData.append("password", password)
     formData.append("role", role)
@@ -59,10 +62,20 @@ export default function RegisterPage() {
         return
       }
 
-      setSuccess("Registration successful! Redirecting to login...")
-      setTimeout(() => {
-        router.push("/login")
-      }, 2000)
+      if (result.requiresApproval) {
+        setSuccess(
+          "Registration successful! Your farmer account is pending admin approval. You will receive an email notification once approved.",
+        )
+      } else {
+        setSuccess("Registration successful! Redirecting to login...")
+      }
+
+      setTimeout(
+        () => {
+          router.push("/login")
+        },
+        result.requiresApproval ? 5000 : 2000,
+      ) // Longer delay for farmers to read approval message
     } catch (error) {
       setError("Something went wrong. Please try again.")
       setIsLoading(false)
@@ -74,7 +87,7 @@ export default function RegisterPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-          <CardDescription>Enter your information to create an account</CardDescription>
+          <CardDescription className="text-gray-300">Enter your information to create an account</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -140,7 +153,7 @@ export default function RegisterPage() {
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="+1 (555) 123-4567"
+                    placeholder="+977 9824577548"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                   />
@@ -149,23 +162,57 @@ export default function RegisterPage() {
             )}
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-gray-500" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-gray-500" />
+                  )}
+                </Button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4 text-gray-500" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-gray-500" />
+                  )}
+                </Button>
+              </div>
             </div>
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading}>
               {isLoading ? "Creating account..." : "Register"}
@@ -173,9 +220,9 @@ export default function RegisterPage() {
           </form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <div className="text-sm text-center text-muted-foreground">
+          <div className="text-sm text-center text-gray-300">
             Already have an account?{" "}
-            <Link href="/login" className="text-primary hover:underline">
+            <Link href="/login" className="text-blue-500 hover:underline">
               Login
             </Link>
           </div>
