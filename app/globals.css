@@ -74,3 +74,6 @@
     @apply bg-background text-foreground;
   }
 }
+.lg:py-32{
+  padding-bottom: 0rem !important;
+}

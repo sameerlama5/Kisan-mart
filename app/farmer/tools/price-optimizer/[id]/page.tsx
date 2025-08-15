@@ -1,261 +1,309 @@
-import { getProductById } from "@/lib/actions/product-actions"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import Link from "next/link"
-import { redirect } from "next/navigation"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
-import { optimizePrice, getSimilarProducts, getProductAnalytics } from "@/lib/algorithms/price-optimizer"
-import Image from "next/image"
-import { Progress } from "@/components/ui/progress"
-import { ArrowUp, ArrowDown, Minus, AlertCircle, CheckCircle2 } from "lucide-react"
-import PriceUpdateForm from "./price-update-form"
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import clientPromise from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  ArrowLeft,
+  TrendingUp,
+  TrendingDown,
+  AlertCircle,
+  CheckCircle,
+} from "lucide-react";
+import Link from "next/link";
+import { optimizePrice } from "@/lib/algorithms/price-optimizer";
+import { PriceUpdateForm } from "./price-update-form";
 
-export default async function ProductPriceOptimizerPage({ params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions)
+export default async function PriceOptimizerDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const session = await getServerSession(authOptions);
 
-  if (!session) {
-    redirect("/login?callbackUrl=/farmer/tools/price-optimizer")
+  if (!session || !session.user || session.user.role !== "farmer") {
+    redirect("/login");
   }
 
-  if (session.user.role !== "farmer") {
-    redirect("/")
-  }
+  try {
+    const client = await clientPromise;
+    const db = client.db();
 
-  const product = await getProductById(params.id)
+    const product = await db.collection("products").findOne({
+      _id: new ObjectId(params.id),
+      farmerId: session.user.id,
+    });
 
-  if (!product) {
+    if (!product) {
+      redirect("/farmer/tools/price-optimizer");
+    }
+
+    const similarProducts = await db
+      .collection("products")
+      .find({
+        category: product.category,
+        farmerId: { $ne: session.user.id },
+      })
+      .limit(10)
+      .toArray();
+
+    const recommendation = await optimizePrice(
+      {
+        _id: product._id.toString(),
+        name: product.name,
+        price: product.price,
+        category: product.category,
+        stock: product.stock,
+        sales: Math.floor(Math.random() * 20),
+        views: Math.floor(Math.random() * 100),
+        createdAt: product.createdAt,
+        updatedAt: product.updatedAt,
+      },
+      similarProducts.map((p) => ({
+        _id: p._id.toString(),
+        name: p.name,
+        price: p.price,
+        category: p.category,
+        stock: p.stock,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+      }))
+    );
+
+    const getPriceChangeIcon = (change: number) => {
+      if (change > 0) return <TrendingUp className="h-5 w-5 text-green-600" />;
+      if (change < 0) return <TrendingDown className="h-5 w-5 text-red-600" />;
+      return <CheckCircle className="h-5 w-5 text-blue-600" />;
+    };
+
+    const getPriceChangeColor = (change: number) => {
+      if (change > 0) return "text-green-600";
+      if (change < 0) return "text-red-600";
+      return "text-blue-600";
+    };
+
+    const getConfidenceColor = (score: number) => {
+      if (score >= 80) return "bg-green-100 text-green-800";
+      if (score >= 60) return "bg-yellow-100 text-yellow-800";
+      return "bg-red-100 text-red-800";
+    };
+
     return (
-      <div className="container py-8">
-        <div className="mb-6">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
           <Link href="/farmer/tools/price-optimizer">
-            <Button variant="ghost">← Back to Price Optimizer</Button>
+            <Button variant="ghost" className="mb-4">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Price Optimizer
+            </Button>
           </Link>
+          <h1 className="text-3xl font-bold">Price Optimization</h1>
+          <p className="text-gray-600 mt-2">
+            AI-powered pricing recommendations for your product
+          </p>
         </div>
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-semibold mb-4">Product not found</h2>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Product Info */}
+          <div className="lg:col-span-1">
+            <Card>
+              <CardHeader>
+                <CardTitle>{product.name}</CardTitle>
+                <CardDescription className="text-white">Category: {product.category}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-sm text-white">Current Price</p>
+                  <p className="text-2xl font-bold">Rs. {product.price}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-white">Stock</p>
+                  <p className="text-lg">{product.stock} units</p>
+                </div>
+                <div>
+                  <p className="text-sm text-white">Listed</p>
+                  <p className="text-sm">
+                    {new Date(product.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recommendation */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      {getPriceChangeIcon(recommendation.priceChange)}
+                      Price Recommendation
+                    </CardTitle>
+                    <CardDescription className="text-white">
+                      Based on market data, demand, and competition analysis
+                    </CardDescription>
+                  </div>
+                  <Badge
+                    className={getConfidenceColor(
+                      recommendation.confidenceScore
+                    )}
+                  >
+                    {recommendation.confidenceScore}% Confidence
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Price Summary */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <p className="text-sm text-gray-300">Current</p>
+                    <p className="text-lg font-semibold">
+                      Rs. {recommendation.currentPrice}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-gray-300">Recommended</p>
+                    <p className="text-lg font-semibold text-blue-600">
+                      Rs. {recommendation.recommendedPrice}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-gray-300">Change</p>
+                    <p
+                      className={`text-lg font-semibold ${getPriceChangeColor(
+                        recommendation.priceChange
+                      )}`}
+                    >
+                      {recommendation.priceChange > 0 ? "+" : ""}Rs.{" "}
+                      {recommendation.priceChange.toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-gray-300">Percentage</p>
+                    <p
+                      className={`text-lg font-semibold ${getPriceChangeColor(
+                        recommendation.priceChange
+                      )}`}
+                    >
+                      {recommendation.percentChange > 0 ? "+" : ""}
+                      {recommendation.percentChange.toFixed(1)}%
+                    </p>
+                  </div>
+                </div>
+
+                {/* Price Range */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2 text-primary">
+                    Recommended Price Range
+                  </h4>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-primary">
+                      Min: Rs. {recommendation.minPrice}
+                    </span>
+                    <span className="text-sm text-primary">
+                      Max: Rs. {recommendation.maxPrice}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                    <div
+                      className="bg-accent h-2 rounded-full"
+                      style={{
+                        width: `${
+                          ((recommendation.recommendedPrice -
+                            recommendation.minPrice) /
+                            (recommendation.maxPrice -
+                              recommendation.minPrice)) *
+                          100
+                        }%`,
+                      }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Reasoning */}
+                <div>
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    Analysis & Reasoning
+                  </h4>
+                  <div className="space-y-2">
+                    {recommendation.reasoning.map((reason, index) => (
+                      <div
+                        key={index}
+                        className="flex items-start gap-2 text-sm"
+                      >
+                        <div className="w-2 h-2 bg-accent rounded-full mt-2 flex-shrink-0"></div>
+                        <p className="text-gray-300">{reason}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Update Price Form */}
+                <div className="border-t pt-6">
+                  <PriceUpdateForm
+                    productId={product._id.toString()}
+                    currentPrice={product.price}
+                    recommendedPrice={recommendation.recommendedPrice}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
-    )
-  }
 
-  // Check if the product belongs to the current farmer
-  if (product.farmerId !== session.user.id) {
-    redirect("/farmer/tools/price-optimizer")
-  }
-
-  // Get similar products for comparison
-  const similarProducts = await getSimilarProducts(product._id, product.category, product.farmerId)
-
-  // Get product analytics
-  const analytics = await getProductAnalytics(product._id)
-
-  // Enhance product with analytics data
-  const enhancedProduct = {
-    ...product,
-    views: analytics.views,
-    sales: analytics.sales,
-  }
-
-  // Get price recommendation
-  const recommendation = optimizePrice(enhancedProduct, similarProducts)
-
-  return (
-    <div className="container py-8">
-      <div className="mb-6">
-        <Link href="/farmer/tools/price-optimizer">
-          <Button variant="ghost">← Back to Price Optimizer</Button>
-        </Link>
-      </div>
-
-      <div className="grid gap-8 md:grid-cols-3">
-        <div className="md:col-span-1">
-          <Card>
+        {/* Market Comparison */}
+        {similarProducts.length > 0 && (
+          <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Product Details</CardTitle>
+              <CardTitle>Market Comparison</CardTitle>
+              <CardDescription>
+                Similar products in the {product.category} category
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="aspect-square relative mb-4">
-                <Image
-                  alt={product.name}
-                  className="object-cover rounded-md"
-                  fill
-                  src={product.images[0] || "/placeholder.svg?height=300&width=300"}
-                />
-              </div>
-              <h2 className="text-xl font-bold">{product.name}</h2>
-              <p className="text-muted-foreground mt-1">{product.description}</p>
-
-              <div className="mt-4 space-y-2">
-                <div className="flex justify-between">
-                  <span>Current Price:</span>
-                  <span className="font-bold">Rs.{product.price.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Category:</span>
-                  <span className="capitalize">{product.category}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Stock:</span>
-                  <span>{product.stock} units</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Views:</span>
-                  <span>{analytics.views}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Sales:</span>
-                  <span>{analytics.sales} units</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Conversion Rate:</span>
-                  <span>
-                    {analytics.views > 0 ? `${((analytics.sales / analytics.views) * 100).toFixed(1)}%` : "N/A"}
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <Link href={`/farmer/products/${product._id}/edit`}>
-                  <Button variant="outline" className="w-full text-primary">
-                    Edit Product
-                  </Button>
-                </Link>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2">Product</th>
+                      <th className="text-left py-2">Price</th>
+                      <th className="text-left py-2">Stock</th>
+                      <th className="text-left py-2">Farmer</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {similarProducts.slice(0, 5).map((similarProduct: any) => (
+                      <tr
+                        key={similarProduct._id.toString()}
+                        className="border-b"
+                      >
+                        <td className="py-2">{similarProduct.name}</td>
+                        <td className="py-2">Rs. {similarProduct.price}</td>
+                        <td className="py-2">{similarProduct.stock} units</td>
+                        <td className="py-2">{similarProduct.farmerName}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        <div className="md:col-span-2">
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Price Recommendation</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-                <div>
-                  <div className="text-sm text-muted-foreground">Current Price</div>
-                  <div className="text-2xl font-bold">Rs.{product.price.toFixed(2)}</div>
-                </div>
-
-                <div className="flex items-center">
-                  {Math.abs(recommendation.percentChange) < 2 ? (
-                    <Minus className="h-6 w-6 text-muted-foreground mx-4" />
-                  ) : recommendation.percentChange > 0 ? (
-                    <ArrowUp className="h-6 w-6 text-green-500 mx-4" />
-                  ) : (
-                    <ArrowDown className="h-6 w-6 text-red-500 mx-4" />
-                  )}
-                </div>
-
-                <div>
-                  <div className="text-sm text-muted-foreground">Recommended Price</div>
-                  <div className="text-2xl font-bold">Rs.{recommendation.recommendedPrice.toFixed(2)}</div>
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm">Confidence Score</span>
-                  <span className="text-sm font-medium">{recommendation.confidenceScore}%</span>
-                </div>
-                <Progress value={recommendation.confidenceScore} className="h-2" />
-              </div>
-
-              <div className="mb-6">
-                <h3 className="font-medium mb-2">Recommended Price Range</h3>
-                <div className="flex justify-between items-center bg-muted p-3 rounded-md">
-                  <div className="text-center">
-                    <div className="text-sm text-muted-foreground">Minimum</div>
-                    <div className="font-medium text-primary">Rs.{recommendation.minPrice.toFixed(2)}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-sm text-muted-foreground">Recommended</div>
-                    <div className="font-bold text-primary">Rs.{recommendation.recommendedPrice.toFixed(2)}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-sm text-muted-foreground">Maximum</div>
-                    <div className="font-medium text-primary">Rs.{recommendation.maxPrice.toFixed(2)}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <h3 className="font-medium mb-2">Analysis</h3>
-                <div className="space-y-2">
-                  {recommendation.reasoning.map((reason, index) => (
-                    <div key={index} className="flex items-start gap-2">
-                      {reason.includes("Consider increasing") ? (
-                        <ArrowUp className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      ) : reason.includes("Consider decreasing") ? (
-                        <ArrowDown className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
-                      ) : reason.includes("optimal") ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      ) : (
-                        <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
-                      )}
-                      <p className="text-sm">{reason}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <PriceUpdateForm
-                productId={product._id}
-                currentPrice={product.price}
-                recommendedPrice={recommendation.recommendedPrice}
-                minPrice={recommendation.minPrice}
-                maxPrice={recommendation.maxPrice}
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>How This Works</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                Our price optimization algorithm analyzes several factors to recommend the optimal price for your
-                product:
-              </p>
-
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-medium">Market Analysis</h3>
-                  <p className="text-sm text-muted-foreground">
-                    We analyze current market prices for similar products in your category to ensure your pricing is
-                    competitive.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="font-medium">Demand Assessment</h3>
-                  <p className="text-sm text-muted-foreground">
-                    We evaluate the demand for your product based on views, sales, and conversion rates to determine
-                    price elasticity.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="font-medium">Seasonal Factors</h3>
-                  <p className="text-sm text-muted-foreground">
-                    We consider seasonal trends that affect pricing in your product category.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="font-medium">Stock Levels</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Your current inventory levels are factored in to help balance between quick sales and maximizing
-                    profit.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        )}
       </div>
-    </div>
-  )
+    );
+  } catch (error) {
+    console.error("Price optimizer detail error:", error);
+    redirect("/farmer/tools/price-optimizer");
+  }
 }

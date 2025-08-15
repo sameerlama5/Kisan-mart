@@ -4,13 +4,13 @@ import { revalidatePath } from "next/cache"
 import clientPromise from "../mongodb"
 import type { Product } from "../db-models"
 import { ObjectId } from "mongodb"
-import { getServerSession } from "next-auth"
+import { getServerSession } from "next-auth/next"
 import { authOptions } from "../auth"
 
 export async function addProduct(formData: FormData) {
   const session = await getServerSession(authOptions)
 
-  if (!session || session.user.role !== "farmer") {
+  if (!session || !session.user || session.user.role !== "farmer") {
     return { error: "Unauthorized" }
   }
 
@@ -19,7 +19,26 @@ export async function addProduct(formData: FormData) {
   const price = Number.parseFloat(formData.get("price") as string)
   const stock = Number.parseInt(formData.get("stock") as string)
   const category = formData.get("category") as string
-  const images = [formData.get("image") as string] // In a real app, handle multiple image uploads
+
+  // Handle image upload
+  let imageUrl = "/placeholder.svg?height=400&width=400"
+  const imageFile = formData.get("image")
+
+  if (imageFile instanceof File && imageFile.size > 0) {
+    try {
+      // In a real application, you would upload the image to a storage service
+      // like AWS S3, Cloudinary, or Vercel Blob Storage
+      // For now, we'll just use a placeholder with the file name
+      imageUrl = `/placeholder.svg?height=400&width=400&text=${encodeURIComponent(imageFile.name)}`
+
+      // Example of how you might handle this with a real upload service:
+      // const uploadResult = await uploadToStorageService(imageFile)
+      // imageUrl = uploadResult.url
+    } catch (error) {
+      console.error("Image upload error:", error)
+      return { error: "Failed to upload image" }
+    }
+  }
 
   if (!name || !description || isNaN(price) || isNaN(stock) || !category) {
     return { error: "Missing required fields" }
@@ -35,7 +54,7 @@ export async function addProduct(formData: FormData) {
       price,
       stock,
       category,
-      images,
+      images: [imageUrl], // Store the image URL
       farmerId: session.user.id,
       farmerName: session.user.name,
       createdAt: new Date(),
@@ -97,7 +116,7 @@ export async function getProductById(id: string) {
 export async function updateProduct(id: string, formData: FormData) {
   const session = await getServerSession(authOptions)
 
-  if (!session || session.user.role !== "farmer") {
+  if (!session || !session.user || session.user.role !== "farmer") {
     return { error: "Unauthorized" }
   }
 
@@ -144,10 +163,56 @@ export async function updateProduct(id: string, formData: FormData) {
   }
 }
 
+export async function updateProductPrice(id: string, newPrice: number) {
+  const session = await getServerSession(authOptions)
+
+  if (!session || !session.user || session.user.role !== "farmer") {
+    return { error: "Unauthorized" }
+  }
+
+  try {
+    const client = await clientPromise
+    const db = client.db()
+
+    const product = await db.collection("products").findOne({ _id: new ObjectId(id) })
+
+    if (!product) {
+      return { error: "Product not found" }
+    }
+
+    if (product.farmerId !== session.user.id) {
+      return { error: "You can only update your own products" }
+    }
+
+    if (isNaN(newPrice) || newPrice <= 0) {
+      return { error: "Invalid price value" }
+    }
+
+    // Only update the price and updatedAt fields, leave everything else unchanged
+    await db.collection("products").updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          price: newPrice,
+          updatedAt: new Date(),
+        },
+      },
+    )
+
+    revalidatePath(`/farmer/products/${id}`)
+    revalidatePath("/farmer/products")
+    revalidatePath("/farmer/tools/price-optimizer")
+    return { success: "Price updated successfully" }
+  } catch (error) {
+    console.error("Update product price error:", error)
+    return { error: "Failed to update price" }
+  }
+}
+
 export async function deleteProduct(id: string) {
   const session = await getServerSession(authOptions)
 
-  if (!session || session.user.role !== "farmer") {
+  if (!session || !session.user || session.user.role !== "farmer") {
     return { error: "Unauthorized" }
   }
 

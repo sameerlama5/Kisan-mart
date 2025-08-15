@@ -63,6 +63,14 @@ export default function Navbar() {
                 Warnings
               </Button>
             </Link>
+            <Link href="/admin/market-data">
+              <Button
+                variant="ghost"
+                className={isActive("/admin/market-data") ? "bg-accent" : ""}
+              >
+                Market Data
+              </Button>
+            </Link>
           </>
         );
       case "farmer":

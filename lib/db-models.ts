@@ -51,6 +51,12 @@ export interface Order {
   status: "pending" | "processing" | "shipped" | "delivered" | "cancelled"
   shippingAddress: string
   paymentMethod: string
+  paymentDetails?: {
+    paymentId?: string
+    paymentStatus?: string
+    payerEmail?: string
+    payerName?: string
+  }
   createdAt: Date
   updatedAt: Date
 }
@@ -109,4 +115,49 @@ export interface FarmerResponse {
   responseType: "explanation" | "action_plan" | "appeal" | "acknowledgment"
   respondedAt: Date
   attachments?: string[] 
+}
+
+export interface Transaction {
+  _id?: string
+  orderId: string
+  farmerId: string
+  farmerName: string
+  customerId: string
+  customerName: string
+  customerEmail: string
+  products: {
+    productId: string
+    productName: string
+    quantity: number
+    unitPrice: number
+    totalPrice: number
+  }[]
+  totalAmount: number
+  farmerEarnings: number 
+  platformFee?: number
+  paymentMethod: "paypal" | "cash" | "bank_transfer"
+  paymentDetails: {
+    paymentId: string
+    paymentStatus: "COMPLETED" | "PENDING" | "FAILED" | "CANCELLED"
+    payerEmail?: string
+    payerName?: string
+    transactionFee?: number
+  }
+  status: "completed" | "pending" | "failed" | "refunded"
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface MarketData {
+  _id?: string
+  category: string
+  avgPrice: number
+  minPrice: number
+  maxPrice: number
+  demandScore: number 
+  seasonalityFactor: number
+  lastUpdatedBy: string
+  lastUpdatedByName: string
+  createdAt: Date
+  updatedAt: Date
 }
